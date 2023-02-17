@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
-)
 
-const token string = "secret"
+	"github.com/joho/godotenv"
+)
 
 type Contact struct {
 	Email    string `json:"email"`
@@ -18,8 +19,8 @@ type Contact struct {
 
 type Location struct {
 	Address string  `json:"address"`
-	Lat     float64 `json:"lat"`
-	Lon     float64 `json:"lon"`
+	Lat     string `json:"lat"`
+	Lon     string `json:"lon"`
 }
 
 type Space struct {
@@ -37,17 +38,17 @@ func renderResponse() Space {
 	return Space{
 		Api:              "0.13",
 		ApiCompatibility: "14",
-		Space:            "Chaostreff Flensburg",
-		Logo:             "https://chaostreff-flensburg.de/wp-content/uploads/2018/03/ctfl-logo.png",
-		Url:              "https://chaostreff-flensburg.de",
+		Space:            os.Getenv("SPACE"),
+		Logo:             os.Getenv("LOGO"),
+		Url:              os.Getenv("URL"),
 		Location: Location{
-			Address: "Apenrader Str. 49, 24941 Flensburg",
-			Lat:     54.785,
-			Lon:     9.437,
+			Address: os.Getenv("ADDRESS"),
+			Lat:     os.Getenv("LAT"),
+			Lon:     os.Getenv("LON"),
 		},
 		Contact: Contact{
-			Email:    "mail@chaostreff-flensburg.de",
-			Mastodon: "https://chaos.social/@chaos_fl",
+			Email:    os.Getenv("EMAIL"),
+			Mastodon: os.Getenv("MASTODON"),
 		},
 		Open: getState(),
 	}
@@ -86,6 +87,11 @@ func setState(state bool) {
 }
 
 func main() {
+	err := godotenv.Load()
+  if err != nil {
+    log.Fatal("Error loading .env file")
+  }
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(renderResponse())
 	})
@@ -100,7 +106,7 @@ func main() {
 			}
 			defer r.Body.Close()
 
-      if string(body) != token {
+      if string(body) != os.Getenv("TOKEN") {
         http.Error(w, "Invalid token", http.StatusUnauthorized)
         return
       }
@@ -121,7 +127,7 @@ func main() {
 			}
 			defer r.Body.Close()
 
-      if string(body) != token {
+      if string(body) != os.Getenv("TOKEN") {
         http.Error(w, "Invalid token", http.StatusUnauthorized)
         return
       }
