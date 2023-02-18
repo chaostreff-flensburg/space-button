@@ -18,7 +18,7 @@ type Contact struct {
 }
 
 type Location struct {
-	Address string  `json:"address"`
+	Address string `json:"address"`
 	Lat     string `json:"lat"`
 	Lon     string `json:"lon"`
 }
@@ -88,16 +88,16 @@ func setState(state bool) {
 
 func main() {
 	err := godotenv.Load()
-  if err != nil {
-    log.Fatal("Error loading .env file")
-  }
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(renderResponse())
 	})
 
 	http.HandleFunc("/open", func(w http.ResponseWriter, r *http.Request) {
-    if r.Method == "POST" {
+		if r.Method == "POST" {
 			// Read request body
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
@@ -106,10 +106,10 @@ func main() {
 			}
 			defer r.Body.Close()
 
-      if string(body) != os.Getenv("TOKEN") {
-        http.Error(w, "Invalid token", http.StatusUnauthorized)
-        return
-      }
+			if string(body) != os.Getenv("TOKEN") {
+				http.Error(w, "Invalid token", http.StatusUnauthorized)
+				return
+			}
 		} else {
 			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 			return
@@ -127,10 +127,10 @@ func main() {
 			}
 			defer r.Body.Close()
 
-      if string(body) != os.Getenv("TOKEN") {
-        http.Error(w, "Invalid token", http.StatusUnauthorized)
-        return
-      }
+			if string(body) != os.Getenv("TOKEN") {
+				http.Error(w, "Invalid token", http.StatusUnauthorized)
+				return
+			}
 		} else {
 			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 			return
