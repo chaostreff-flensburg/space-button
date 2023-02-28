@@ -1,11 +1,12 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
-const char *WIFI_SSID = "Chaostreff-Flensburg";
-const char *WIFI_PASSWORD = "SECRET";
+const char *WIFI_SSID = "Your SSID";
+const char *WIFI_PASSWORD = "Your Password";
 
 const char *URL = "https://hooks.slack.com/services/SECRET";
-const char *FINGERPRINT = "82AEFD933630DA030A2F6353DE2EB0438BF441F6";
+const char *SPACEAPITOKEN = "SECRET";
+
 
 WiFiClientSecure client;
 HTTPClient httpsClient;
@@ -26,7 +27,7 @@ void setup() {
 
   Serial.println("Connected");
 
-  client.setFingerprint(FINGERPRINT);
+  client.setInsecure();
 
   pinMode(D8, INPUT);
   pinMode(D6, OUTPUT);
@@ -43,9 +44,11 @@ void loop() {
     if (currentState == 1) {
       Serial.print("Send Space ist auf");
       send("Space ist auf!");
+      setApiOpen();
     } else {
       Serial.print("Send Space ist geschlossen");
       send("Space ist zu!");
+      setApiClose();
     }
   }
 
@@ -67,4 +70,18 @@ void send(const String &text) {
   httpsClient.POST(data);
   httpsClient.end();
   Serial.print("Send");
+}
+
+void setApiClose() {
+  httpsClient.begin(client, "https://api.chaostreff-flensburg.de/close");
+  httpsClient.POST(SPACEAPITOKEN);
+  httpsClient.end();
+  Serial.print("Close API");
+}
+
+void setApiOpen() {
+  httpsClient.begin(client, "https://api.chaostreff-flensburg.de/open");
+  httpsClient.POST(SPACEAPITOKEN);
+  httpsClient.end();
+  Serial.print("OPEN API");
 }
