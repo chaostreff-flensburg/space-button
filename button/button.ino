@@ -1,11 +1,11 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
-const char *WIFI_SSID = "Your SSID";
-const char *WIFI_PASSWORD = "Your Password";
+const char *WIFI_SSID = "SSID";
+const char *WIFI_PASSWORD = "SECRET";
 
 const char *URL = "https://hooks.slack.com/services/SECRET";
-const char *SPACEAPITOKEN = "SECRET";
+const char *SPACEAPITOKEN = "TOKEN";
 
 
 WiFiClientSecure client;
@@ -15,22 +15,28 @@ int lastState = 0;
 int currentState = 0;
 
 void setup() {
-  Serial.begin(9600);
-
   WiFi.mode(WIFI_STA);
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
   }
-
-  Serial.println("Connected");
 
   client.setInsecure();
 
   pinMode(D8, INPUT);
   pinMode(D6, OUTPUT);
+
+  digitalWrite(D6, HIGH);
+  delay(100);
+  digitalWrite(D6, LOW);
+  delay(100);
+  digitalWrite(D6, HIGH);
+  delay(100);
+  digitalWrite(D6, LOW);
+  digitalWrite(D6, HIGH);
+  delay(100);
+  digitalWrite(D6, LOW);
 }
 
 void loop() {
@@ -42,11 +48,9 @@ void loop() {
 
   if (lastState != currentState) {
     if (currentState == 1) {
-      Serial.print("Send Space ist auf");
       send("Space ist auf!");
       setApiOpen();
     } else {
-      Serial.print("Send Space ist geschlossen");
       send("Space ist zu!");
       setApiClose();
     }
@@ -60,7 +64,7 @@ void loop() {
     digitalWrite(D6, LOW);
   }
 
-  delay(1000);
+  delay(200);
 }
 
 void send(const String &text) {
@@ -69,19 +73,16 @@ void send(const String &text) {
   httpsClient.addHeader("Content-Type", "application/json");
   httpsClient.POST(data);
   httpsClient.end();
-  Serial.print("Send");
 }
 
 void setApiClose() {
   httpsClient.begin(client, "https://api.chaostreff-flensburg.de/close");
   httpsClient.POST(SPACEAPITOKEN);
   httpsClient.end();
-  Serial.print("Close API");
 }
 
 void setApiOpen() {
   httpsClient.begin(client, "https://api.chaostreff-flensburg.de/open");
   httpsClient.POST(SPACEAPITOKEN);
   httpsClient.end();
-  Serial.print("OPEN API");
 }
