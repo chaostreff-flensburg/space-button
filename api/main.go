@@ -23,6 +23,10 @@ type Location struct {
 	Lon     string `json:"lon"`
 }
 
+type Feeds struct {
+	Blog string `json:"blog"`
+}
+
 type Space struct {
 	Api              string   `json:"api"`
 	ApiCompatibility string   `json:"api_compatibility"`
@@ -31,7 +35,9 @@ type Space struct {
 	Url              string   `json:"url"`
 	Location         Location `json:"location"`
 	Contact          Contact  `json:"contact"`
+	Feeds            Feeds    `json:"feeds"`
 	Open             bool     `json:"open"`
+	ExtCCC           string   `json:"ext_ccc"`
 }
 
 func renderResponse() Space {
@@ -50,7 +56,11 @@ func renderResponse() Space {
 			Email:    os.Getenv("EMAIL"),
 			Mastodon: os.Getenv("MASTODON"),
 		},
-		Open: getState(),
+		Feeds: Feeds{
+			Blog: os.Getenv("BLOG"),
+		},
+		ExtCCC: os.Getenv("EXT_CCC"),
+		Open:   getState(),
 	}
 }
 
