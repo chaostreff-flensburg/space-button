@@ -22,9 +22,11 @@ type Contact struct {
 }
 
 type Location struct {
-	Address string  `json:"address,omitempty"`
-	Lat     float64 `json:"lat,omitempty"`
-	Lon     float64 `json:"lon,omitempty"`
+	Address     string  `json:"address,omitempty"`
+	Lat         float64 `json:"lat,omitempty"`
+	Lon         float64 `json:"lon,omitempty"`
+	Timezone    string  `json:"timezone,omitempty"`
+	CountryCode string  `json:"country_code,omitempty"`
 }
 
 type Feed struct {
@@ -95,9 +97,11 @@ func renderResponse() Space {
 		Logo:             os.Getenv("LOGO"),
 		Url:              os.Getenv("URL"),
 		Location: Location{
-			Address: os.Getenv("ADDRESS"),
-			Lat:     lat,
-			Lon:     lon,
+			Address:     os.Getenv("ADDRESS"),
+			Lat:         lat,
+			Lon:         lon,
+			Timezone:    os.Getenv("TIMEZONE"),
+			CountryCode: os.Getenv("COUNTRY_CODE"),
 		},
 		Contact: Contact{
 			Email:    os.Getenv("EMAIL"),
