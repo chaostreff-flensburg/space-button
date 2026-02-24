@@ -17,6 +17,8 @@ import (
 type Contact struct {
 	Email    string `json:"email,omitempty"`
 	Mastodon string `json:"mastodon,omitempty"`
+	Matrix   string `json:"matrix,omitempty"`
+	Telegram string `json:"telegram,omitempty"`
 }
 
 type Location struct {
@@ -34,15 +36,9 @@ type Feeds struct {
 	Blog Feed `json:"blog,omitempty"`
 }
 
-type Icon struct {
-	Open   string `json:"open,omitempty"`
-	Closed string `json:"closed,omitempty"`
-}
-
 type State struct {
 	Open       bool  `json:"open,omitempty"`
 	Lastchange int64 `json:"lastchange,omitempty"`
-	Icon       Icon  `json:"icon,omitempty"`
 }
 
 type Space struct {
@@ -106,6 +102,8 @@ func renderResponse() Space {
 		Contact: Contact{
 			Email:    os.Getenv("EMAIL"),
 			Mastodon: os.Getenv("MASTODON"),
+			Matrix:   os.Getenv("MATRIX"),
+			Telegram: os.Getenv("TELEGRAM"),
 		},
 		Feeds: Feeds{
 			Blog: Feed{
