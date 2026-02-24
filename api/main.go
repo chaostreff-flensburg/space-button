@@ -18,7 +18,7 @@ type Contact struct {
 	Email    string `json:"email,omitempty"`
 	Mastodon string `json:"mastodon,omitempty"`
 	Matrix   string `json:"matrix,omitempty"`
-	Telegram string `json:"telegram,omitempty"`
+	Signal   string `json:"signal,omitempty"`
 }
 
 type Location struct {
@@ -103,7 +103,7 @@ func renderResponse() Space {
 			Email:    os.Getenv("EMAIL"),
 			Mastodon: os.Getenv("MASTODON"),
 			Matrix:   os.Getenv("MATRIX"),
-			Telegram: os.Getenv("TELEGRAM"),
+			Signal:   os.Getenv("SIGNAL"),
 		},
 		Feeds: Feeds{
 			Blog: Feed{
