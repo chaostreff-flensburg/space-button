@@ -178,7 +178,7 @@ func handleCloseOrOpen(open bool, w http.ResponseWriter, r *http.Request) {
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Printf("Error loading .env file")
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
