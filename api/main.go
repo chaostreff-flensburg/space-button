@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -39,8 +38,8 @@ type Feeds struct {
 }
 
 type State struct {
-	Open       bool  `json:"open,omitempty"`
-	Lastchange int64 `json:"lastchange,omitempty"`
+	Open       bool  `json:"open"`
+	Lastchange int64 `json:"lastchange"`
 }
 
 type Space struct {
@@ -55,36 +54,27 @@ type Space struct {
 	ExtCCC           string   `json:"ext_ccc,omitempty"`
 }
 
-func getLastChange() int64 {
-	file, err := os.Open("lastchange.txt")
-	if err != nil {
-		return time.Now().Unix()
-	}
-	defer file.Close()
+const stateFile string = "state.json"
 
-	scanner := bufio.NewScanner(file)
-	if scanner.Scan() {
-		ts, err := strconv.ParseInt(scanner.Text(), 10, 64)
-		if err != nil {
-			return time.Now().Unix()
-		}
-		return ts
+func readState() State {
+	data, err := os.ReadFile(stateFile)
+	if err != nil {
+		return State{Open: false, Lastchange: 0}
 	}
-	return time.Now().Unix()
+
+	var state State
+	if err := json.Unmarshal(data, &state); err != nil {
+		return State{Open: false, Lastchange: 0}
+	}
+	return state
 }
 
-// updateLastChange writes the current timestamp to file
-func updateLastChange() {
-	file, err := os.Create("lastchange.txt")
+func writeState(state State) error {
+	data, err := json.Marshal(state)
 	if err != nil {
-		fmt.Println("Error updating lastchange file:", err)
-		return
+		return fmt.Errorf("marshaling state: %w", err)
 	}
-	defer file.Close()
-
-	w := bufio.NewWriter(file)
-	fmt.Fprintln(w, time.Now().Unix())
-	w.Flush()
+	return os.WriteFile(stateFile, data, 0644)
 }
 
 func renderResponse() Space {
@@ -115,86 +105,64 @@ func renderResponse() Space {
 				URL:  os.Getenv("BLOG"),
 			},
 		},
-		State: State{
-			Open:       getState(),
-			Lastchange: getLastChange(),
-		},
+		State:  readState(),
 		ExtCCC: os.Getenv("EXT_CCC"),
 	}
 }
 
-func getState() bool {
-	file, err := os.Open("state.txt")
-	if err != nil {
-		fmt.Println("Error opening state file:", err)
-		return false
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	if scanner.Scan() {
-		return scanner.Text() == "true"
-	}
-	return false
-}
-
-func setState(state bool) {
-	os.Remove("state.txt")
-	file, err := os.Create("state.txt")
-	if err != nil {
-		fmt.Println("Error creating state file:", err)
-		return
-	}
-	defer file.Close()
-
-	w := bufio.NewWriter(file)
-	fmt.Fprintln(w, state)
-	w.Flush()
-
-	updateLastChange()
-}
-
-func handleCloseOrOpen(open bool, w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+func handleCloseOrOpen(open bool, writer http.ResponseWriter, request *http.Request) {
+	if request.Method != "POST" {
+		http.Error(writer, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
-	body, err := io.ReadAll(r.Body)
+	body, err := io.ReadAll(request.Body)
 	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		http.Error(writer, "Error reading request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+
+	defer func(body io.ReadCloser) {
+		if err := body.Close(); err != nil {
+			log.Printf("Error closing body: %v", err)
+		}
+	}(request.Body)
 
 	if string(body) != os.Getenv("TOKEN") {
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		http.Error(writer, "Invalid token", http.StatusUnauthorized)
 		return
 	}
 
-	setState(open)
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
+	if err := writeState(State{Open: open, Lastchange: time.Now().Unix()}); err != nil {
+		http.Error(writer, "Failed to update state", http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusNoContent)
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Printf("Error loading .env file")
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Error loading .env file. Only using Docker environment variables")
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(renderResponse())
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(writer).Encode(renderResponse()); err != nil {
+			log.Printf("Error encoding response: %v", err)
+			http.Error(writer, "Error encoding response", http.StatusInternalServerError)
+		}
 	})
 
-	http.HandleFunc("/open", func(w http.ResponseWriter, r *http.Request) {
-		handleCloseOrOpen(true, w, r)
+	http.HandleFunc("/open", func(writer http.ResponseWriter, request *http.Request) {
+		handleCloseOrOpen(true, writer, request)
 	})
 
-	http.HandleFunc("/close", func(w http.ResponseWriter, r *http.Request) {
-		handleCloseOrOpen(false, w, r)
+	http.HandleFunc("/close", func(writer http.ResponseWriter, request *http.Request) {
+		handleCloseOrOpen(false, writer, request)
 	})
 
-	http.ListenAndServe(":8080", nil)
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatal(err)
+	}
 }
